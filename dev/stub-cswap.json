@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "activeAccountNumber": 1,
+  "accounts": [
+    {
+      "number": 1,
+      "email": "alice@example.com",
+      "active": true,
+      "usageStatus": "ok",
+      "usage": {
+        "fiveHour": {
+          "pct": 34.0,
+          "resetsAt": "2026-08-21T18:29:59Z"
+        },
+        "sevenDay": {
+          "pct": 62.0,
+          "resetsAt": "2026-08-25T17:59:59Z"
+        },
+        "scoped": [
+          {
+            "name": "Fable",
+            "pct": 91.0
+          }
+        ]
+      },
+      "usageAgeSeconds": 420
+    },
+    {
+      "number": 2,
+      "email": "bob@example.com",
+      "alias": "work",
+      "active": false,
+      "usageStatus": "ok",
+      "usage": {
+        "fiveHour": {
+          "pct": 12.0,
+          "resetsAt": "2026-08-21T16:00:00Z"
+        },
+        "sevenDay": {
+          "pct": 88.0,
+          "resetsAt": "2026-08-23T04:00:00Z"
+        }
+      }
+    },
+    {
+      "number": 3,
+      "email": "carol@example.com",
+      "active": false,
+      "disabled": true,
+      "usageStatus": "token_expired",
+      "lastGoodUsage": {
+        "fiveHour": {
+          "pct": 5.0
+        },
+        "sevenDay": {
+          "pct": 40.0
+        }
+      },
+      "lastGoodAgeSeconds": 7200
+    }
+  ]
+}
