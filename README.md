@@ -1,58 +1,62 @@
 # headroom
 
-[![tests](https://github.com/justin-rhee/headroom/actions/workflows/test.yml/badge.svg)](https://github.com/justin-rhee/headroom/actions/workflows/test.yml)
+[![tests](https://github.com/justin-rhee/headroom/actions/workflows/test.yml/badge.svg)](https://github.com/justin-rhee/headroom/actions/workflows/test.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg) ![python 3](https://img.shields.io/badge/python-3-blue.svg)
 
-One plain menu bar meter for AI plan usage: **shows Claude 5-hour and weekly windows as meters**, **shows OpenRouter spend against your key's cap**, and **puts your worst number in the bar title** so the answer is one look, no click. It is one Python script hosted by [SwiftBar](https://swiftbar.app), with no build step, no daemon, and nothing resident beyond SwiftBar itself.
+Shows how much of your Claude plan and OpenRouter budget is left, right in the Mac menu bar.
 
-It was built after answering "how much runway do I have right now?" several times a day the slow way: one dashboard for a usage percentage, another for a spend number, losing the thread of whatever was actually being done. Multiple Claude accounts made it worse, because the account with the answer was never the one logged in. None of these numbers are secret; they're just scattered, and each one lives behind its own login.
-
-## Use it if
-
-- your Claude plan's limits keep landing mid task instead of in view
-- you run more than one Claude account and forget which has room
-- you'd rather glance than open a dashboard, a terminal, or a second login
-
-## How it works
-
-The Anthropic half is built on [claude-swap](https://github.com/realiti4/claude-swap): headroom runs `cswap list --json` as a subprocess and renders the answer, with per-model rows included. All account storage, switching, and usage polling is cswap's work, and cswap's poll policy stays inside Anthropic's usage-API budget, so the 5-minute refresh is safe. The OpenRouter half asks OpenRouter's key-introspection endpoint what your key has spent; the key goes to openrouter.ai and nowhere else.
-
-The two halves are independent, so you can run both, either, or neither. Each section shows its meters when configured and a one-line setup hint when not, and the bar title falls back from Claude windows to OpenRouter spend to a quiet dot. Anything missing or unreadable renders as "no data" rather than as a guess, so a meter goes quiet instead of going wrong. Each non-active account's name row opens a submenu with "Switch Claude Code to this account", "+ Add account…" sits at the bottom of the account list, and refresh, About, and Quit do what they say.
-
-## Install
+<!-- SCREENSHOT: the menu bar title plus the open menu, dark mode, captured on Justin's Mac -->
 
 ```bash
 git clone https://github.com/justin-rhee/headroom
 cd headroom && bash setup.sh
 ```
 
-`setup.sh` checks prerequisites (macOS, python3, Homebrew if SwiftBar needs installing), installs SwiftBar if it's missing, points it at the `plugin/` folder, hides SwiftBar's own icon so headroom is the only item you see, and launches. Safe to re-run any time. Then pick your halves, both optional:
+How much runway do I have right now? I was answering that several times a day the slow way: one dashboard for a usage percentage, another for spend, losing the thread of what I was doing. Running more than one Claude account made it worse, because the account with the answer was never the one logged in.
 
-For Claude account meters: `uv tool install claude-swap==0.25.0`, log into an account in Claude Code, run `cswap add`, repeat per account. Tested against claude-swap 0.25.0; cswap's JSON contract is additive and headroom parses defensively, so newer versions should keep working, and if meters vanish after an upgrade that's the fail-safe firing, not corruption. Downgrade or file an issue.
+## Use it if
 
-For OpenRouter spend: create or open a key at openrouter.ai/keys (give it a monthly cap), copy it, then:
+- your Claude plan's limits keep landing mid task instead of in view
+- you run more than one Claude account and forget which has room
+- you'd rather glance than open a dashboard, a terminal or a second login
 
-```bash
-pbpaste > ~/.openrouter_agent_key && chmod 600 ~/.openrouter_agent_key
-```
+## Install
 
-Click 🔄 Refresh usage and the spend bar appears. The clipboard route keeps the key out of your shell history. (`OPENROUTER_API_KEY` in the environment also works, but menu bar apps don't inherit your shell profile, so the file is the reliable path.) If the key is rejected, the row says so with the HTTP status instead of pretending nothing is configured.
+`setup.sh` checks prerequisites (macOS, python3, Homebrew if SwiftBar is missing), installs [SwiftBar](https://swiftbar.app), points it at the plugin and launches. It's one Python script with no build step and no daemon, and safe to re-run. Then set up either half:
+
+- for Claude meters: `uv tool install claude-swap==0.25.0`, log into an account in Claude Code, run `cswap add`, and repeat per account
+- for OpenRouter spend: open a key at openrouter.ai/keys with a monthly cap, copy it, and run `pbpaste > ~/.openrouter_agent_key && chmod 600 ~/.openrouter_agent_key`
+
+Click Refresh usage and the meters appear. A rejected key shows its HTTP status rather than pretending nothing is set up.
+
+## How it works
+
+The Claude half runs [claude-swap](https://github.com/realiti4/claude-swap)'s `cswap list --json` and draws the 5-hour and weekly windows as meters, per model. Account storage, switching and polling are all cswap's, and its polling stays inside Anthropic's usage-API budget. The OpenRouter half asks OpenRouter what your key has spent against its cap; the key goes nowhere else.
+
+The halves are independent. The title shows your worst number, falling back from Claude windows to OpenRouter spend to a quiet dot, and anything unreadable shows as "no data" rather than a guess. Each other account's row can switch Claude Code to it.
 
 ## What it won't do
 
-It doesn't give you more quota or lower your bill; it shows you the numbers. It doesn't alert: nothing fires at a threshold yet, you have to look, and a native notification at a percentage you choose is the planned next feature. It doesn't act on what it shows: [openclaw-spillway](https://github.com/justin-rhee/openclaw-spillway) is the other half of this pair, moving an OpenClaw agent's work to a backup lane before a window runs out.
-
-It can't see usage for providers it doesn't know: Anthropic windows come from cswap, OpenRouter spend from your key, and other providers are welcome as issues. Only the file path works reliably for the OpenRouter key, since SwiftBar launches outside your shell and exports in `.zshrc` are invisible to it. macOS only, by construction: SwiftBar, the Keychain that cswap uses, and `defaults` exist nowhere else. The offline test suite also runs on Linux in CI as a code-health check, but the tool itself has one platform.
+- give you more quota or lower your bill; it shows the numbers
+- alert you yet, so you have to look; a notification at a percentage you pick is next
+- act on what it shows; [openclaw-spillway](https://github.com/justin-rhee/openclaw-spillway) moves an OpenClaw agent's work before a window runs out
+- see providers it doesn't know; other providers are welcome as issues
+- read an OpenRouter key from your shell profile, since SwiftBar launches outside your shell, so the file is the reliable path
+- run anywhere but macOS, since SwiftBar, the Keychain and `defaults` exist nowhere else; CI runs the tests on Linux only as a code-health check
 
 ## How I tested it
 
-16 offline tests, run them with `python3 -m unittest discover -s tests`. Unit tests pin the render boundaries: threshold colors flip exactly at 60 and 80, bars clamp at both ends, the title falls back in the documented order, junk data parses to "no data" and never to a number. End-to-end tests run the script exactly as SwiftBar does, in a hermetic environment where no real key file or account store can leak in, and assert on the rendered rows for each state: accounts present, OpenRouter only, nothing configured, rejected key.
-
-One test exists only to be attacked: it plants an account alias that carries SwiftBar parameter syntax (`| bash=...`) and asserts the row renders as inert text. Every dynamic string that reaches a menu row is sanitized for exactly that reason.
-
-The load-bearing mutation flips the hot-threshold comparison from `>=` to `>` in the script, and exactly one test goes red, the one named for the color promise. That mutation and its revert were run as part of this release. The account-parsing tests were written against claude-swap's actual JSON emitter source, not its docs: per-model rows arrive as a list of windows carrying `name`, and that's what the tests pin. Live verification is one machine so far, running real cswap against a real account with real SwiftBar, every day. Design decisions and what changed while building it: [docs/ADR.md](docs/ADR.md).
+- 16 offline tests: `python3 -m unittest discover -s tests`, pinning colors that flip exactly at 60 and 80, bars clamped at both ends, and junk data parsing to "no data"
+- one test plants an account name carrying SwiftBar parameter syntax and checks it renders as plain text
+- flipping the hot-threshold comparison from `>=` to `>` turns exactly one test red; live use is one machine so far, every day, and design decisions are in [docs/ADR.md](docs/ADR.md)
 
 ## License
 
 MIT. See [LICENSE](LICENSE). No warranty. Security notes and how to report a problem: [SECURITY.md](SECURITY.md).
 
-This little tool is one of a handful I pulled out of my own day-to-day agent setup. I use them all myself, so when something breaks I usually notice fast. But if you run into any issues, or anything that looks off, open an issue. I read every one. More tools on my [GitHub profile](https://github.com/justin-rhee).
+<!-- related:start -->
+## Related
+
+- [openclaw-spillway](https://github.com/justin-rhee/openclaw-spillway): moves OpenClaw work to a backup lane before a usage window runs out
+
+Part of a small set of tools I pulled out of my own agent harness. I use them myself and read every issue. More on my [GitHub profile](https://github.com/justin-rhee).
+<!-- related:end -->
